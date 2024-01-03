@@ -1,0 +1,122 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+class Reservoir {
+private:
+    std::string name;
+    double width;
+    double length;
+    double maxDepth;
+
+public:
+    explicit Reservoir(const std::string& n = "", double w = 0.0, double l = 0.0, double d = 0.0)
+        : name(n), width(w), length(l), maxDepth(d) {}
+
+    const std::string& getName() const { return name; }
+    double getWidth() const { return width; }
+    double getLength() const { return length; }
+    double getMaxDepth() const { return maxDepth; }
+
+    double calculateVolume() const {
+        return width * length * maxDepth;
+    }
+
+    double calculateSurfaceArea() const {
+        return width * length;
+    }
+
+    bool sameType(const Reservoir& other) const {
+        return name == other.name;
+    }
+
+    bool operator<(const Reservoir& other) const {
+        return calculateSurfaceArea() < other.calculateSurfaceArea();
+    }
+
+    void displayInfo() const {
+        std::cout << "Reservoir: " << name << "\n";
+        std::cout << "Width: " << width << " meters\n";
+        std::cout << "Length: " << length << " meters\n";
+        std::cout << "Max Depth: " << maxDepth << " meters\n";
+        std::cout << "Volume: " << calculateVolume() << " cubic meters\n";
+        std::cout << "Surface Area: " << calculateSurfaceArea() << " square meters\n";
+        std::cout << "------------------------\n";
+    }
+
+    friend void displayReservoirInfo(const Reservoir& reservoir);
+};
+
+void displayReservoirInfo(const Reservoir& reservoir) {
+    reservoir.displayInfo();
+}
+
+class ReservoirManager {
+private:
+    std::vector<Reservoir*> reservoirs;
+
+public:
+    ~ReservoirManager() {
+        for (Reservoir* r : reservoirs) {
+            delete r;
+        }
+    }
+
+    void addReservoir(const Reservoir& reservoir) {
+        reservoirs.push_back(new Reservoir(reservoir));
+    }
+
+    void removeReservoir(int index) {
+        if (index >= 0 && index < reservoirs.size()) {
+            delete reservoirs[index];
+            reservoirs.erase(reservoirs.begin() + index);
+        }
+    }
+
+    void displayAllReservoirs() const {
+        for (const Reservoir* r : reservoirs) {
+            displayReservoirInfo(*r);
+        }
+    }
+
+    void saveToTextFile(const std::string& filename) const {
+        std::ofstream file(filename);
+        if (file.is_open()) {
+            for (const Reservoir* r : reservoirs) {
+                file << r->getName() << " " << r->getWidth() << " " << r->getLength() << " " << r->getMaxDepth() << "\n";
+            }
+            file.close();
+        }
+        else {
+            std::cerr << "Unable to open the file for writing.\n";
+        }
+    }
+
+    void saveToBinaryFile(const std::string& filename) const {
+        std::ofstream file(filename, std::ios::binary);
+        if (file.is_open()) {
+            for (const Reservoir* r : reservoirs) {
+                file.write(reinterpret_cast<const char*>(r), sizeof(Reservoir));
+            }
+            file.close();
+        }
+        else {
+            std::cerr << "Unable to open the file for writing.\n";
+        }
+    }
+};
+
+int main() {
+    ReservoirManager reservoirManager;
+    reservoirManager.addReservoir(Reservoir("Lake Ontario", 311.6, 85.8, 244));
+    reservoirManager.addReservoir(Reservoir("Lake Erie", 241.3, 57.8, 64));
+    reservoirManager.addReservoir(Reservoir("Lake Superior", 563.3, 121.8, 406));
+    reservoirManager.addReservoir(Reservoir("Lake Huron", 332.8, 59.6, 229));
+    reservoirManager.displayAllReservoirs();
+    reservoirManager.removeReservoir(1);
+    reservoirManager.displayAllReservoirs();
+    reservoirManager.saveToTextFile("reservoirs.txt");
+    reservoirManager.saveToBinaryFile("reservoirs.dat");
+    return 0;
+}
